@@ -153,7 +153,7 @@ class ContactEnergyUsageSensor(SensorEntity):
             if response and response[0]:
                 for point in response:
                     if point["value"]:
-                        # If the off peak value is '0.00' then the energy is free.
+                        # If the off peak value is not '0.00' then the energy is free.
                         # HASSIO statistics requires us to add values as a sum of all previous values.
                         if point["offpeakValue"] == "0.00":
                             kWhRunningSum = kWhRunningSum + float(point["value"])

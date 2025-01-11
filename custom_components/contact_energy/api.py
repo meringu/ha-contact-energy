@@ -12,7 +12,6 @@ class ContactEnergyApi:
     def __init__(self, email, password):
         """Initialise Contact Energy API."""
         self._api_token = ""
-        self._api_session = ""
         self._contractId = ""
         self._accountId = ""
         self._url_base = "https://api.contact-digital-prod.net"
@@ -22,51 +21,24 @@ class ContactEnergyApi:
 
     def login(self):
         """Login to the Contact Energy API."""
-        result = False
         headers = {"x-api-key": self._api_key}
         data = {"username": self._email, "password": self._password}
-        loginResult = requests.post(
-            self._url_base + "/login/v2", json=data, headers=headers
-        )
-        if loginResult.status_code == requests.codes.ok:
-            jsonResult = loginResult.json()
+        result = requests.post(self._url_base + "/login/v2", json=data, headers=headers)
+        if result.status_code == requests.codes.ok:
+            jsonResult = result.json()
             self._api_token = jsonResult["token"]
             _LOGGER.debug("Logged in")
-            self.refresh_session()
-            result = True
+            return self.get_accounts()
         else:
             _LOGGER.error(
                 "Failed to login - check the username and password are valid",
-                loginResult.text,
+                result.text,
             )
             return False
-        return result
-
-    def refresh_session(self):
-        """Refresh the session."""
-        result = False
-        headers = {"x-api-key": self._api_key}
-        data = {"username": self._email, "password": self._password}
-        loginResult = requests.post(
-            self._url_base + "/login/v2/refresh", json=data, headers=headers
-        )
-        if loginResult.status_code == requests.codes.ok:
-            jsonResult = loginResult.json()
-            self._api_session = jsonResult["session"]
-            _LOGGER.debug("Refreshed session")
-            self.get_accounts()
-            result = True
-        else:
-            _LOGGER.error(
-                "Failed to refresh session - check the username and password are valid",
-                loginResult.text,
-            )
-            return False
-        return result
 
     def get_accounts(self):
         """Get the first electricity account that we see."""
-        headers = {"x-api-key": self._api_key, "session": self._api_session}
+        headers = {"x-api-key": self._api_key, "session": self._api_token}
         result = requests.get(self._url_base + "/accounts/v2", headers=headers)
         if result.status_code == requests.codes.ok:
             _LOGGER.debug("Retrieved accounts")
@@ -79,6 +51,7 @@ class ContactEnergyApi:
                 if contract["contractType"] == 1  # "contractTypeLabel": "Electricity"
             ]
             self._contractId = electricityContracts[0]["id"]
+            return True
         else:
             _LOGGER.error("Failed to fetch customer accounts %s", result.text)
             return False

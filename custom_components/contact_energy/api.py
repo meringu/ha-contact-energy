@@ -65,16 +65,20 @@ class ContactEnergyApi:
         return result
 
     def get_accounts(self):
-        """Get the first account that we see."""
+        """Get the first electricity account that we see."""
         headers = {"x-api-key": self._api_key, "session": self._api_session}
-        result = requests.get(
-            self._url_base + "/customer/v2?fetchAccounts=true", headers=headers
-        )
+        result = requests.get(self._url_base + "/accounts/v2", headers=headers)
         if result.status_code == requests.codes.ok:
             _LOGGER.debug("Retrieved accounts")
             data = result.json()
-            self._accountId = data["accounts"][0]["id"]
-            self._contractId = data["accounts"][0]["contracts"][0]["contractId"]
+            self._accountId = data["accountDetail"]["id"]
+            contracts = data["accountDetail"]["contracts"]
+            electricityContracts = [
+                contract
+                for contract in contracts
+                if contract["contractType"] == 1  # "contractTypeLabel": "Electricity"
+            ]
+            self._contractId = electricityContracts[0]["id"]
         else:
             _LOGGER.error("Failed to fetch customer accounts %s", result.text)
             return False

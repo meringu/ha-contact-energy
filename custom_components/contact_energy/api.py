@@ -59,7 +59,7 @@ class ContactEnergyApi:
     def get_usage(self, year, month, day):
         """Update our usage data."""
         headers = {"x-api-key": self._api_key, "authorization": self._api_token}
-        response = requests.post(
+        url = (
             self._url_base
             + "/usage/v2/"
             + self._contractId
@@ -76,7 +76,11 @@ class ContactEnergyApi:
             + "-"
             + (month.zfill(2))
             + "-"
-            + (day.zfill(2)),
+            + (day.zfill(2))
+        )
+        _LOGGER.debug("Get usage query: %s", url)
+        response = requests.post(
+            url,
             headers=headers,
         )
         data = {}
